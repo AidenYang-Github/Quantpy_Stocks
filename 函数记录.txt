@@ -1,0 +1,31 @@
+================ mysql_stock 接口调用 ================ 
+
+get_stock_basic——MySQLStockList
+main——MySQLStockList
+
+write_all_stock——get_daily_data X
+
+get_all_stocks——get_trade_date_data、gap_date
+
+
+main
+	|- MySQLStockList
+		|- pro.stock_basic
+	|- is_trade_date
+		|- pro.trade_cal
+	|- get_all_stocks
+		|- get_trade_date_data
+			|- pro.daily
+		|- gap_date
+			|- pro.trade_cal
+	|- get_stock_basic
+		|- MySQLStockList
+			|- pro.stock_basic
+
+
+
+MySQLStockList——pro.stock_basic
+get_daily_data——pro.daily X
+get_trade_date_data——pro.daily
+is_trade_date——pro.trade_cal
+gap_date——pro.trade_cal
