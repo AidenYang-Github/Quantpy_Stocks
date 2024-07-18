@@ -1,7 +1,9 @@
 import tushare as ts
 
+from TOKEN_ID import TOKEN
+
 # 初始化pro接口
-pro = ts.pro_api('5e4655de8e9e9bca6cf1be7cd9cc33661410cc33c1894afc808a6ffa')
+pro = ts.pro_api(TOKEN)
 
 
 class TuShareAPI:
