@@ -2,7 +2,11 @@
 Created on 2022年09月17日
 
 @author: Aiden_yang
+@website：https://gitee.com/aiden_yang/Stocks
+
+股票数据接口
 @website：https://tushare.pro/
+本文件需至少使用2000积分才可调用相应接口
 """
 import time
 import argparse

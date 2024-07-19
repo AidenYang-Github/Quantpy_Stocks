@@ -8,3 +8,9 @@ __pycache__/
 # .sh/.bat
 *.sh
 *.bat
+
+# unused files
+candlestick_techniques.py
+stock_data_processing.py
+strategy_1.py
+test.py
