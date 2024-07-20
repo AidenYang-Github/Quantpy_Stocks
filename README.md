@@ -1,4 +1,4 @@
-# A股行情数据获取 & 量化交易策略的结构初步设计
+# A股行情数据获取&量化交易策略的结构设计
 
 ## A股日线行情
 * 数据获取网址：<https://tushare.pro/> 
@@ -6,9 +6,8 @@
 
 ### 1.数据库搭建
 * 使用Navicat for MySQL对数据库进行管理  
-【数据库中的具体参数目前集成在<u>mysql_stock*.py</u>文件中[^zs1]】  
-[^zs1]：后续会修改进配置文件中   
-![数据库](./web/img/Navicat for MySQL.jpg)  
+【数据库中的具体参数目前集成在mysql_stock*.py文件中，后续会修改进配置文件中】
+![数据库](./web/img/Navicat_for_MySQL.jpg)  
 ![sz000001](./web/img/sz000001.jpg)
 
 ### 2.A股日线行情数据获取
@@ -24,16 +23,16 @@
 ### 5.执行模型
 
 ---
-### 文件说明
+## 文件说明
 * main.py # 主程序
     * mysql_stock_01.py（mysql_stock.py中多个接口由于受到积分权限的限制无法调用，如需使用可在Tushare上自行申请）
     
 * mysql_data_processing.py   # 数据处理模块库
 * tushare_api.py    # 需要传参的tushare的接口
-* rules.py  # 辅助交易的小工具【可根据本金投入提示止盈止损】
-![rule_exe](./web/img/rules_exe.jpg)
-* API.txt   # 接口调用文档【待修改】
+* rules.py  # 辅助交易的小工具【可根据本金投入提示止盈止损】  
+![rule_exe](./web/img/rules_exe_1.jpg)
+* API.txt   # 接口调用说明【待修改】
 
-* sz000001.csv  # 从数据库导出的
+* sz000001.csv  # 从数据库导出的股票日线行情数据
 
 ---
