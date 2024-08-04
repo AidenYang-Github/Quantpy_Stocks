@@ -10,24 +10,20 @@ Created on 2022年09月17日
 """
 import time
 import argparse
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import pandas as pd
 import tushare as ts
-from sqlalchemy import create_engine
 
 from TOKEN_ID import TOKEN
-from tushare_api import trade_cal, stock_mx, suspend_d, bak_basic, bak_daily
-from mysql_data_processing import view_bar, tscode_to_tbname
+from config import database
+from config import MySQL_Database
+from Module import tushare_api, mysql_data_processing as mdp
 
 local_datetime = time.strftime('%Y%m%d')
-delay60 = timedelta(seconds=60)
 
-# 接口调用
-# pro.stock_basic()：接口每小时只能调用一次
-# pro.daily()：120积分每分钟内最多调取500次，每次6000条数据，相当于单次提取23年历史
-# pro.trade_cal()：需2000积分
-stock_basic_ = None  # TuShare中的stock_basic接口：'L'为调用上市股票列表接口，'D'为调用退市股票列表接口；None为不调用接口
+# Tushare接口状态说明（具体查看./Module/tushare_api.py文件）
+stock_basic_ = 'L'  # TuShare中的stock_basic接口：'L'为调用上市股票列表接口，'D'为调用退市股票列表接口；None为不调用接口
 
 # 数据表名称
 stock_table_name = 'all_stock_basic'
@@ -37,13 +33,8 @@ delisted_stock_tbname = 'all_delisted_stock'
 pro = ts.pro_api(TOKEN)
 
 # 初始化数据库
-username = 'root'
-password = '123456'
-host = '127.0.0.1'
-port = '3306'
-database = 'stock_databases_01'
-cuu = 'charset=utf8&use_unicode=1'
-engine_ts = create_engine('mysql://%s:%s@%s:%s/%s?%s' % (username, password, host, port, database, cuu))
+DB = MySQL_Database.MySQLDatabaseOperations()
+engine_ts = DB.create_mysql_database()
 
 
 class MySQLDaily:
@@ -131,127 +122,6 @@ class TuShareStock:
         return ts_code
 
 
-class Color:
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-
-    BLUEBOLD = '\033[94m\033[1m'
-    END = '\033[0m'
-
-
-# ################ 参数定义 # ################
-def init_arg():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--function', type=str, default='',
-                        help='function=delisted_stock/suspend_d/stock_mx/bak_basic/bak_daily')
-    return parser.parse_args()
-
-
-args = init_arg()
-
-
-# ################ 从接口获取数据 # ################
-# 以下函数调用了pro.daily()接口
-def get_daily_data(ts_code):
-    """
-    根据股票的ts_code，获取股票的每日数据
-    pro.daily：120积分每分钟内最多调取500次，每次6000条数据，相当于单次提取23年历史
-    :param ts_code:具体股票的ts_code，str
-    :return:
-    """
-    dataframe = pro.daily(ts_code=ts_code)
-    return dataframe
-
-
-def get_trade_date_data(ts_code, trade_date='', start_date=''):
-    """
-    A股日线行情
-    根据股票的ts_code，获取该股票的交易日数据或起始交易日数据
-    其中参数，trade_date优先级高于start_date，即若trade_date不为空的话，即便start_date有日期也无效
-    :param ts_code: 具体股票的ts_code，str
-    :param trade_date: 交易日期，只获取该交易日期的数据
-    :param start_date: 开始日期，获取从该日期开始，直到程序运行当天（交易日）或到结束日期为止的所有数据
-    :return:
-    """
-    dataframe = pro.daily(**{
-        "ts_code": ts_code,
-        "trade_date": trade_date,
-        "start_date": start_date,
-        "end_date": "",
-        "offset": "",
-        "limit": ""
-    }, fields=[
-        "ts_code",
-        "trade_date",
-        "open",
-        "high",
-        "low",
-        "close",
-        "pre_close",
-        "change",
-        "pct_chg",
-        "vol",
-        "amount"])
-    return dataframe
-
-
-# ################ 向数据库存储数据 # ################
-def write_data(dataframe, stocks_data):
-    """
-    将给定的df数据存入数据表中
-    :param dataframe:所需存入的df数据，dataframe
-    :param stocks_data:存入表中的名称，str
-    :return:
-    """
-    # dataframe.to_sql(stocks_data, engine_ts, index=False, if_exists='append', chunksize=10000)
-    dataframe.to_sql(stocks_data, engine_ts, index=False, if_exists='append', chunksize=5000)
-    return
-
-
-# ################ 从数据库读取数据 # ################
-def read_data(table_name):
-    """
-    根据表名，读取表中的数据
-    :param table_name: 表名
-    :return: 表中数据
-    """
-    # sql = "SELECT * FROM {tb_name} LIMIT 20".format(tb_name=table_name)
-    sql = "SELECT * FROM {tb_name}".format(tb_name=table_name)
-    dataframe = pd.read_sql_query(sql, engine_ts)
-    return dataframe
-
-
-def read_table_last_date(table_name):
-    """
-    获取股票日线行情表中最新的日期
-    :param table_name:
-    :return:
-    """
-    sql = "SELECT max(trade_date) FROM {tb_name}".format(tb_name=table_name)
-    dataframe = pd.read_sql_query(sql, engine_ts)
-    return dataframe.values[0][0]
-
-
-def show_tables():
-    """
-    获取数据库中已有的表名
-    :return:
-    """
-    sql = "select table_name from information_schema.tables where table_schema='{db_name}'".format(db_name=database)
-    dataframe = pd.read_sql_query(sql, engine_ts)
-
-    table_name_list = dataframe.TABLE_NAME.to_list()
-    return table_name_list
-
-
 # ################ stock_basic数据表相操作 # ################
 def stock_basic_save_into_db(ts_code, tables, ts_stock, sb_name):
     """
@@ -272,7 +142,7 @@ def stock_basic_save_into_db(ts_code, tables, ts_stock, sb_name):
     # ts_stock = TuShareStock()
     # sb_name = ts_stock.stock_basic_name  # 数据表all_stock_basic
     if sb_name in tables:
-        read_df = read_data(sb_name)  # 读取all_stock_basic表中的数据
+        read_df = DB.read_data(sb_name)  # 读取all_stock_basic表中的数据
         if len(ts_code) == len(read_df):
             if len(set(ts_code == read_df.ts_code)) != 1:
                 # TODO 当数据表中的股票个数和接口获取的股票支数相同，会出现两种情况，
@@ -289,13 +159,9 @@ def stock_basic_save_into_db(ts_code, tables, ts_stock, sb_name):
         # new_table = pd.DataFrame(data=None,
         #                          columns=['ts_code', 'symbol', 'name', 'area', 'industry', 'fullname', 'market',
         #                                   'exchange', 'list_date'])
-        # write_data(new_table, sb_name)
+        # DB.write_data(new_table, sb_name)
         ts_stock.write_stock_list()
         print('数据表%s不在数据库中，已将[https://tushare.pro/]的数据存储到数据库中' % sb_name)
-
-
-# ################ 各个股票的数据表相操作 # ################
-# 暂未使用到该函数
 
 
 # ################ 通过日期循环日线行情数据 # ################
@@ -317,11 +183,11 @@ def get_daily_stocks(ts_code, tables):
     last_date_dict = {}
     for tscode in ts_code:
         count += 1
-        tbname = tscode_to_tbname(tscode)
+        tbname = mdp.tscode_to_tbname(tscode)
 
         if tbname in tables:
             update_stocks_list.append(tscode)
-            last_date = read_table_last_date(tbname)  # 获取该股票最新一天的日期
+            last_date = DB.read_table_last_date(tbname)  # 获取该股票最新一天的日期
 
             # 更新字典，将日期作为键，股票代码作为值
             if last_date not in last_date_dict:
@@ -332,29 +198,30 @@ def get_daily_stocks(ts_code, tables):
             # 根据数据表中是否有最新数据来进行获取并存储
             if last_date is not None:
                 # 该股票在数据表中有最新日期的数据，直接根据日期获取网站上的日线行情
-                df = get_trade_date_data(tscode, start_date=last_date)
+                df = tushare_api.get_trade_date_data(tscode, start_date=last_date)
                 reverse_df = df[::-1]  # 将数据写入数据表之前，要先倒转顺序
                 if len(reverse_df) > 1:
-                    # write_data(reverse_df[1:], tbname)
+                    DB.write_data(reverse_df[1:], tbname)
                     pass
-                else:
-                    # print('该股票目前为最新数据')
-                    pass
+                # else:
+                #     print('该股票目前为最新数据')
+                #     pass
             else:
                 # 该股票在数据表中无最新日期的数据，获取网站上该股票的所有日线行情
-                df = get_daily_data(tscode)
+                df = tushare_api.get_daily_data(tscode)
                 reverse_df = df[::-1]  # 将数据写入数据表之前，要先倒转顺序
-                # write_data(reverse_df, tbname)
+                DB.write_data(reverse_df, tbname)
         else:
             # 该股票不在数据库中，直接获取网站上该股票的所有日线行情
             new_stocks_list.append(tscode)
-            df = get_daily_data(tscode)
+            df = tushare_api.get_daily_data(tscode)
             reverse_df = df[::-1]  # 将数据写入数据表之前，要先倒转顺序
-            # write_data(reverse_df, tbname)
+            DB.write_data(reverse_df, tbname)
 
-        view_bar(count, len(ts_code))  # 实时刷新进度条
+        mdp.view_bar(count, len(ts_code))  # 实时刷新进度条
 
     # 股票日期更新情况
+    print(f'\n')
     for ld_key in last_date_dict.keys():
         if ld_key is None:
             print(f'目前{last_date_dict[ld_key]}这些股票尚未更新或刚上市尚未开盘')
@@ -371,38 +238,6 @@ def get_daily_stocks(ts_code, tables):
     print('It takes {} to get stocks!'.format(et - st))
 
 
-# ================ 查重程序 ==================
-def duplicate_checking():
-    """
-    数据表查重
-    :return:
-    """
-    print('\n开始查重')
-    # 获取数据库中已有的表名
-    tables = show_tables()  # 数据库中所有的数据表
-
-    tb_list = []
-    # param = ''
-    for tb_name in tables:
-        if tb_name[:2] == 'al' or tb_name[:2] == 'st':
-            param = 'ts_code'
-        elif tb_name[:2] == 'bj' or tb_name[:2] == 'sh' or tb_name[:2] == 'sz':
-            param = 'trade_date'
-        else:
-            continue
-
-        sql = 'select {0} from {1} group by {0} having count({0})>1'.format(param, tb_name)
-        dataframe = pd.read_sql_query(sql, engine_ts)
-        if dataframe.values.size != 0:
-            tb_list.append(tb_name)
-
-    if len(tb_list) != 0:
-        print('重复列表如下：\n', tb_list)
-        return tb_list
-    else:
-        print('数据表均无重复')
-
-
 # ================ 主程序 ==================
 def main():
     print('\n')
@@ -412,7 +247,7 @@ def main():
     print('\n')
 
     # 获取数据库中已有的表名
-    tables = show_tables()  # 数据库中所有的数据表
+    tables = DB.show_tables()  # 数据库中所有的数据表
 
     is_trade = True  # 手动运行
     if is_trade:
@@ -429,7 +264,7 @@ def main():
             stock_basic_save_into_db(tscode, tables, mysql_stock_list, sb_table_name)  # 将TS网站获取到的stock_basic存储到数据库中
             print(f'已将TS网站中的stock_basic数据更新到数据库中，共耗时：{datetime.now() - start_time}')
         else:
-            sb_df = read_data(sb_table_name)  # 直接读取数据库中stock_basic中数据，且从表中获取tscode
+            sb_df = DB.read_data(sb_table_name)  # 直接读取数据库中stock_basic中数据，且从表中获取tscode
             tscode = sb_df.ts_code
             print(f'数据库中股票个数为：{len(tscode)}')
 
@@ -442,6 +277,7 @@ def main():
         print('Starting time is ', start_time)
         print('Ending time is   ', end_time)
         print('It takes {}, the program is finished!'.format(end_time - start_time))
+        print(f'DONE!')
     else:
         print('非交易日')
 
