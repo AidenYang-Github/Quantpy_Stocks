@@ -5,7 +5,7 @@ __pycache__/
 
 .idea/
 .web/.xmind
-.output/*.log
+.output/train_2023-*.log
 
 # .sh/.bat
 *.sh
