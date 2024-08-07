@@ -5,6 +5,7 @@ __pycache__/
 
 .idea/
 .web/.xmind
+.output/*.log
 
 # .sh/.bat
 *.sh
@@ -15,3 +16,4 @@ candlestick_techniques.py
 stock_data_processing.py
 strategy_1.py
 test.py
+requirements_pipreqs.txt

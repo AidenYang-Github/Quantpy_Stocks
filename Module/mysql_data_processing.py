@@ -2,6 +2,9 @@
 Created on 2022年10月27日
 
 @author: Aiden_yang
+@website：https://gitee.com/aiden_yang/Stocks
+
+数据处理 & 图像展示模块
 
 字段	        类型	说明
 0.ts_code	    str	    股票代码
@@ -22,17 +25,18 @@ pct_chg = change/pre_close
 """
 import sys
 import time
+from datetime import datetime
+import argparse
 
 import pandas as pd
-from datetime import datetime
-from config import MySQL_Database
 import mplfinance as mpf
-import argparse
+
+from Module import MySQL_Database
 
 local_datetime = time.strftime('%Y%m%d')
 
 # 数据库初始化设置
-DB = MySQL_Database.MySQLDatabaseOperations()    # 初始化数据库
+DB = MySQL_Database.MySQLDatabaseOperations()  # 初始化数据库
 # DB.create_mysql_database()   # 新建数据库
 
 
@@ -125,7 +129,7 @@ def k_line_display(stock_name):
     # data = pd.read_csv(stock_name + '.csv')  # 传入数据
     # sn = stock_name.split('.')
     data = DB.read_data(tscode_to_tbname(ts_code=stock_name))
-    bak_basic_data = DB.read_bak_basic_data(tb_name='all_bak_basic_20230318', ts_code=stock_name)
+    # bak_basic_data = DB.read_bak_basic_data(tb_name='all_bak_basic_20230318', ts_code=stock_name)
 
     # 构建所需绘制图片的数据集
     # 将data中的trade_date/open/high/low/close/vol构建新的df
@@ -141,17 +145,18 @@ def k_line_display(stock_name):
     )
 
     # 将bak_basic_data中的trade_date/pe/pb构建新的df
-    data_k_line2 = pd.DataFrame(
-        {
-            'Date': bak_basic_data['trade_date'].astype(str),
-            'Pe': bak_basic_data['pe'],
-            'Pb': bak_basic_data['pb']
-        }
-    )
+    # data_k_line2 = pd.DataFrame(
+    #     {
+    #         'Date': bak_basic_data['trade_date'].astype(str),
+    #         'Pe': bak_basic_data['pe'],
+    #         'Pb': bak_basic_data['pb']
+    #     }
+    # )
 
     # 合并以上两个dataframe中的数据
     # data_k_line0 = pd.merge(data_k_line1, data_k_line2, on='Date')    # 按照key合并，
-    data_k_line0 = pd.merge(data_k_line1, data_k_line2, how='left')  # 按照类型合并
+    # data_k_line0 = pd.merge(data_k_line1, data_k_line2, how='left')  # 按照类型合并
+    data_k_line0 = data_k_line1
 
     # 将字符串类型的日期转换成时间戳的索引
     data_k_line0['Date'] = pd.to_datetime(data_k_line0['Date'])
@@ -181,8 +186,8 @@ def k_line_display(stock_name):
 
     # 将pe数据提取出来
     # add_plot = mpf.make_addplot(part_of_data_k_line['Pe'])
-    add_plot = [mpf.make_addplot(part_of_data_k_line[['Pe']]),
-                mpf.make_addplot(part_of_data_k_line[['Pb']])]
+    # add_plot = [mpf.make_addplot(part_of_data_k_line[['Pe']]),
+    #             mpf.make_addplot(part_of_data_k_line[['Pb']])]
 
     # 显示K线
     mpf.plot(
@@ -321,15 +326,12 @@ if __name__ == '__main__':
     # func_num = args.function
     # ts_code = args.stock_code
     func_num = 1
-    ts_code = '000001.SZ'
+    tscode = '000001.SZ'
 
     if func_num == 0:
         main()
     elif func_num == 1:
-        print('Stock Code: ', ts_code)
-        k_line_display(ts_code)  # 开放ts_code
-        print('Done!')
+        print('Stock Code: ', tscode)
+        k_line_display(tscode)  # 开放ts_code
     elif func_num == 2:
         main_stock_fluctuation_statistics()
-
-    print('FINISH!')

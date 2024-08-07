@@ -9,25 +9,17 @@ Created on 2022年09月17日
 本文件只需使用基础积分（120）即可
 """
 import time
-import argparse
+# import argparse
 from datetime import datetime
 
-import pandas as pd
+# import pandas as pd
 import tushare as ts
 
 from TOKEN_ID import TOKEN
-from config import database
-from config import MySQL_Database
-from Module import tushare_api, mysql_data_processing as mdp
+from config import database, stock_table_name, delisted_stock_tbname, stock_basic_
+from Module import tushare_api, MySQL_Database, mysql_data_processing as mdp
 
 local_datetime = time.strftime('%Y%m%d')
-
-# Tushare接口状态说明（具体查看./Module/tushare_api.py文件）
-stock_basic_ = 'L'  # TuShare中的stock_basic接口：'L'为调用上市股票列表接口，'D'为调用退市股票列表接口；None为不调用接口
-
-# 数据表名称
-stock_table_name = 'all_stock_basic'
-delisted_stock_tbname = 'all_delisted_stock'
 
 # 初始化pro接口
 pro = ts.pro_api(TOKEN)
@@ -145,9 +137,11 @@ def stock_basic_save_into_db(ts_code, tables, ts_stock, sb_name):
         read_df = DB.read_data(sb_name)  # 读取all_stock_basic表中的数据
         if len(ts_code) == len(read_df):
             if len(set(ts_code == read_df.ts_code)) != 1:
-                # TODO 当数据表中的股票个数和接口获取的股票支数相同，会出现两种情况，
-                #  一种是没有新增股票个数，另一种是新增了股票但也退市了股票且新增的股票个数和退市的股票个数相等，
-                #  该判断中所涉及的是第二种情况，判断条件需重新设计
+                # TODO 当数据表中的股票个数和接口获取的股票支数相同，会出现两种情况，一种是没有新增股票个数，
+                #  另一种是新增了股票但也退市了股票且新增的股票个数和退市的股票个数相等，该判断中所涉及的是第二种情况，
+                #  判断条件需重新设计，如果碰到该种情况，目前最简单的方式就是用最新的表格直接覆盖掉旧表格（打开下面的注释）
+                #  后续改进想法是，保存完整<stock_basic>字段，
+                # ts_stock.write_stock_list()  # 打开此条注释
                 print("The number of stocks hasn't changed but stock detail info has changed!")
             else:
                 print('%s 无新增股票' % time.strftime('%Y-%m-%d'))

@@ -1,3 +1,11 @@
+"""
+Created on 2024年08月01日
+
+@author: Aiden_yang
+@website：https://gitee.com/aiden_yang/Stocks
+
+数据库操作模块
+"""
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists, create_database

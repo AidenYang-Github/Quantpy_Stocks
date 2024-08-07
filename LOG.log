@@ -1,0 +1,40 @@
+20240807
+【将各个文件系统归纳，并新增完善文件】
+1.[config]完善config初始化配置文件
+2.[Module]数据库操作模块转移到Module文件夹下
+3.[Module]将tushare的接口统一归纳到tushare_api.py文件下
+4.[output]新增《train_2024-08-06_20-28-00.log》作为参考
+5.整理接口调用说明文件API.txt
+6.新增更新日志LOG.log
+7.删除mysql_stock_01.py中冗余代码并将调用代码进行模块分类
+8.更新README.md
+9.新增requirements.txt依赖包文件
+
+20240804
+update project framework
+1.文件按照模块分类存放（Module文件夹）；
+2.初始化配置单独存放（config文件夹）；
+3.删除冗余代码；
+4.实行主干、分支单独运作；
+
+20240729
+update README.md
+1.更新README.md
+
+20240720
+update README.md
+1.更新README.md
+
+20240719
+add README.md & main.py
+1.修改.gitignore文件
+2.新增README.md和main.py程序运行文件
+3.忽略并修改部分文件
+
+20240718
+file delete&change
+1.删除项目无关文件
+2.新增.gitignore文件
+
+20240716
+Initial commit

@@ -1,8 +1,17 @@
 """
+Created on 2023年03月02日
+
+@author: Aiden_yang
+@website：https://gitee.com/aiden_yang/Stocks
+
 # Tushare接口说明
-# pro.stock_basic()：接口每小时只能调用一次
+# pro.stock_basic()：接口每小时只能调用一次，每天会有调用次数限制
 # pro.daily()：120积分每分钟内最多调取500次，每次6000条数据，相当于单次提取23年历史
 # pro.trade_cal()：需2000积分
+# pro.bak_basic：每天最多访问该接口20次，每分钟最多访问该接口2次，单次最大5000条
+# pro.bak_daily：
+# pro.stock_mx：
+# pro.suspend_d：
 """
 import tushare as ts
 

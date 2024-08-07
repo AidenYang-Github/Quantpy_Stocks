@@ -1,31 +1,33 @@
-================ mysql_stock 接口调用 ================ 
+# 接口调用说明
 
-get_stock_basic——MySQLStockList
-main——MySQLStockList
+================ 文件结构 ================================
+[Stocks]
+    |-[config]
+    |   |- __init__.py
+    |-[Module]
+    |   |-__init__.py
+    |   |-mysql_data_processing.py
+    |   |- MySQL_Database.py
+    |   |-tushare_api.py
+    |-main.py
+        |-mysql_stock_01.py(替换mysql_stock.py)
 
-write_all_stock——get_daily_data X
+================ 所有调用tushare接口的函数 ================
+"""pro.调用接口{类/函数}"""
 
-get_all_stocks——get_trade_date_data、gap_date
+mysql_stock_01.py
+    |- pro.stock_basic{TuShareStock}
 
+tushare_api.py
+    |- pro.trade_cal{trade_cal()}
+    |- pro.daily{get_daily_data()/get_trade_date_data()}
+    |- pro.bak_basic{bak_basic()}
+    |- pro.bak_daily{bak_daily()}
+    |- pro.stock_mx{stock_mx()}
+    |- pro.suspend_d{suspend_d()}
 
-main
-	|- MySQLStockList
-		|- pro.stock_basic
-	|- is_trade_date
-		|- pro.trade_cal
-	|- get_all_stocks
-		|- get_trade_date_data
-			|- pro.daily
-		|- gap_date
-			|- pro.trade_cal
-	|- get_stock_basic
-		|- MySQLStockList
-			|- pro.stock_basic
-
-
-
-MySQLStockList——pro.stock_basic
-get_daily_data——pro.daily X
-get_trade_date_data——pro.daily
-is_trade_date——pro.trade_cal
-gap_date——pro.trade_cal
+=========================================================
+*具体接口使用说明查看Tushare官网：https://tushare.pro/
+*其中有的接口未使用到，因为积分不够
+*之前交易日历接口（pro.trade_cal）非常好用只需要基础积分即可使用，
+后因为服务器压力上调了积分权限，建议官方能更改为<限制调用频率，而非上调积分权限:P>
