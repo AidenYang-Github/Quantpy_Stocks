@@ -3,3 +3,4 @@ pandas==1.1.5
 SQLAlchemy==1.4.41
 SQLAlchemy_Utils==0.41.2
 tushare==1.2.85
+backtrader==1.9.78.123

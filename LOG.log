@@ -1,3 +1,19 @@
+20240902——新增量化交易策略回测相关内容
+【新增】
+1.[Strategy]新增文件：
+    |- __init__.py 量化交易策略参数配置文件
+    |- demo_strategy_csv.py 从csv文件获取数据的简单回测策略文件
+    |- demo_strategy_db.py 从数据库获取数据的简单回测策略文件
+    |- sz000001.csv 个股数据csv文件
+【修改】
+2.[Module]修改文件：
+    |- mysql_data_processing.py 调整了部分K线展示的参数以及字体大小（还没有调整完，待TODO）
+    |- MySQL_Database.py    新增read_tscode_name()函数，用于读取股票代码所对应的股票中文简称
+3.LOG.log   更新日志文件
+4.requirements.txt  依赖包文件中新增依赖：backtrader
+【待更新】
+1.本次更新主要适配CSDN文章(https://blog.csdn.net/u011628215/article/details/141750404)中的内容，README.md文件后续再更新
+
 20240807
 【将各个文件系统归纳，并新增完善文件】
 1.[config]完善config初始化配置文件

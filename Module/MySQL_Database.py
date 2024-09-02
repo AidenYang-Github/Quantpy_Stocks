@@ -9,6 +9,7 @@ Created on 2024年08月01日
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists, create_database
+
 from config import username, password, host, port, database, cuu
 
 
@@ -39,9 +40,9 @@ class MySQLDatabaseOperations:
     # =============== 从数据库读取数据 ===============
     def show_tables(self):
         """
-            读取数据库中所有的数据表
-            :return:list:[str,str,……]
-            """
+        读取数据库中所有的数据表
+        :return:list:[str,str,……]
+        """
         sql = "SELECT table_name FROM information_schema.tables WHERE table_schema='{db_name}'".format(db_name=database)
         dataframe = pd.read_sql_query(sql, self.engine_ts)
 
@@ -50,10 +51,10 @@ class MySQLDatabaseOperations:
 
     def read_data(self, table_name):
         """
-            根据表名，读取表中的数据
-            :param table_name: 表名
-            :return: 表中数据
-            """
+        根据表名，读取表中的数据
+        :param table_name: 表名
+        :return: 表中数据
+        """
         sql = "SELECT * FROM {tb_name}".format(tb_name=table_name)
         dataframe = pd.read_sql_query(sql, self.engine_ts)
         return dataframe
@@ -70,10 +71,10 @@ class MySQLDatabaseOperations:
 
     def read_detail_data(self, df):
         """
-            读取dataframe中具体的数据
-            :param df:dataframe格式的数据
-            :return:
-            """
+        读取dataframe中具体的数据
+        :param df:dataframe格式的数据
+        :return:
+        """
         trade_date = df.trade_date.values
         open = df.open.values
         high = df.high.values
@@ -87,15 +88,27 @@ class MySQLDatabaseOperations:
 
     def read_bak_basic_data(self, tb_name, ts_code):
         """
-            根据表名，读取表中的数据
-            :param tb_name: 表名
-            :param ts_code: 股票代码
-            :return: 表中数据
-            """
+        根据表名，读取表中的数据
+        :param tb_name: 表名
+        :param ts_code: 股票代码
+        :return: 表中数据
+        """
         sql = "SELECT trade_date,ts_code,pe,pb FROM {tb_name} WHERE ts_code='{ts_code}'".format(tb_name=tb_name,
                                                                                                 ts_code=ts_code)
         dataframe = pd.read_sql_query(sql, self.engine_ts)
         return dataframe
+
+    def read_tscode_name(self, stn, ts_code):
+        """
+        根据股票的代码获取股票的中文名称
+        :param stn:所要查询的表名称
+        :param ts_code:所要查询的股票代码（例如：000001.SZ）
+        :return:股票的中文名称（例如：平安银行）
+        """
+        sql = "SELECT ts_code,name FROM {stock_table_name} WHERE ts_code='{ts_code}'".format(stock_table_name=stn,
+                                                                                             ts_code=ts_code)
+        dataframe = pd.read_sql_query(sql, self.engine_ts)
+        return dataframe.name[0]
 
     # ################ 向数据库存储数据 # ################
     def write_data(self, dataframe, stocks_data):
@@ -107,4 +120,3 @@ class MySQLDatabaseOperations:
         """
         dataframe.to_sql(stocks_data, self.engine_ts, index=False, if_exists='append', chunksize=5000)
         return
-
