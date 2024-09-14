@@ -10,7 +10,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists, create_database
 
-from config import username, password, host, port, database, cuu
+from config import USERNAME, PASSWORD, HOST, PORT, DATABASE, CUU
 
 
 class MySQLDatabaseOperations:
@@ -18,18 +18,18 @@ class MySQLDatabaseOperations:
     数据库操作
     """
 
-    def __init__(self):
+    def __init__(self, database=DATABASE):
         # 创建数据库连接
-        self.engine_ts = create_engine('mysql://%s:%s@%s:%s/%s?%s' % (username, password, host, port, database, cuu))
+        self.engine_ts = create_engine('mysql://%s:%s@%s:%s/%s?%s' % (USERNAME, PASSWORD, HOST, PORT, database, CUU))
         pass
 
     # =============== 新建数据库 ===============
-    def create_mysql_database(self, database=database):
+    def create_mysql_database(self, database=DATABASE):
         """
         检查数据库是否存在，不存在则新建数据库
         :return: 若不存在，则返回新建数据库的链接；否则无返回值，为默认数据库
         """
-        self.engine_ts = create_engine('mysql://%s:%s@%s:%s/%s?%s' % (username, password, host, port, database, cuu))
+        self.engine_ts = create_engine('mysql://%s:%s@%s:%s/%s?%s' % (USERNAME, PASSWORD, HOST, PORT, database, CUU))
         if not database_exists(self.engine_ts.url):
             print(f'{database}数据库不存在，新建数据库链接：{self.engine_ts.url}')
             create_database(self.engine_ts.url)
@@ -38,7 +38,7 @@ class MySQLDatabaseOperations:
         return self.engine_ts
 
     # =============== 从数据库读取数据 ===============
-    def show_tables(self):
+    def show_tables(self, database=DATABASE):
         """
         读取数据库中所有的数据表
         :return:list:[str,str,……]
@@ -69,23 +69,6 @@ class MySQLDatabaseOperations:
         dataframe = pd.read_sql_query(sql, self.engine_ts)
         return dataframe.values[0][0]
 
-    def read_detail_data(self, df):
-        """
-        读取dataframe中具体的数据
-        :param df:dataframe格式的数据
-        :return:
-        """
-        trade_date = df.trade_date.values
-        open = df.open.values
-        high = df.high.values
-        low = df.low.values
-        close = df.close.values
-        pre_close = df.pre_close.values
-        change = df.change.values
-        pct_chg = df.pct_chg.values
-        vol = df.vol.values
-        amount = df.amount.values
-
     def read_bak_basic_data(self, tb_name, ts_code):
         """
         根据表名，读取表中的数据
@@ -111,12 +94,20 @@ class MySQLDatabaseOperations:
         return dataframe.name[0]
 
     # ################ 向数据库存储数据 # ################
-    def write_data(self, dataframe, stocks_data):
+    def write_data(self, dataframe, table_name, **kwargs):
         """
         将给定的df数据存入数据表中
         :param dataframe:所需存入的df数据，dataframe
-        :param stocks_data:存入表中的名称，str
+        :param table_name:存入表中的名称，str
         :return:
         """
-        dataframe.to_sql(stocks_data, self.engine_ts, index=False, if_exists='append', chunksize=5000)
+        if_exists = 'append'
+        chunksize = 5000
+        for key, value in kwargs.items():
+            if key == 'if_exists':
+                if_exists = value
+            elif key == 'chunksize':
+                chunksize = value
+
+        dataframe.to_sql(table_name, self.engine_ts, index=False, if_exists=if_exists, chunksize=chunksize)
         return

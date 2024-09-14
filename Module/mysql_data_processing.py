@@ -23,24 +23,25 @@ change = close - pre_close
 pct_chg = change/pre_close
 
 """
+import argparse
 # -*- coding: UTF-8 -*-
 import sys
 import time
 from datetime import datetime
-import argparse
 
-# import numpy as np
-import pandas as pd
 import mplfinance as mpf
-# import matplotlib.pyplot as plt
+import pandas as pd
 
-from config import stock_table_name
 from Module import MySQL_Database
+from config import STOCK_BASIC_NAME, ADJFACTOR_DATABASE
+
+# import matplotlib.pyplot as plt
 
 local_datetime = time.strftime('%Y%m%d')
 
 # 数据库初始化设置
 DB = MySQL_Database.MySQLDatabaseOperations()  # 初始化数据库
+DB_ADJ = MySQL_Database.MySQLDatabaseOperations(ADJFACTOR_DATABASE)  # 初始化数据库
 
 
 # DB.create_mysql_database()   # 新建数据库
@@ -125,6 +126,39 @@ def fluctuation_statistics(ts_code=''):
     return [f1, f2, f3, f4, f5, f6, f7, f8, f9, f10]
 
 
+def adj_data_processing(stock_name=''):
+    # 通过不复权的数据计算前复权数据
+    table_name = tscode_to_tbname(stock_name)
+    df = DB.read_data(table_name)
+    df_adj = DB_ADJ.read_data(table_name)
+
+    df.index = pd.to_datetime(df['trade_date'])
+    df_adj.index = pd.to_datetime(df_adj['trade_date'])
+
+    df.drop(['ts_code', 'trade_date', 'pre_close', 'change', 'pct_chg', 'amount'], axis=1, inplace=True)
+    df_adj.drop(['ts_code', 'trade_date'], axis=1, inplace=True)
+
+    df.rename(columns={'vol': 'volume'}, inplace=True)
+
+    start_date = max(df.index[0], df_adj.index[0])
+    end_date = min(df.index[-1], df_adj.index[-1])
+
+    latest_adj_factor = df_adj.adj_factor.array[-1]  # 获取最后（最新）一天的复权因子
+
+    df = df[start_date:end_date]
+    df_adj = df_adj[start_date:end_date]
+
+    merge_df = pd.merge(df, df_adj, left_index=True, right_index=True)
+
+    df_qfq = pd.DataFrame()
+    for i in range(len(merge_df.columns) - 2):
+        data_qfq = merge_df[merge_df.columns[i]] * merge_df[merge_df.columns[-1]] / latest_adj_factor
+        df_qfq.insert(i, merge_df.columns[i], data_qfq)
+
+    df_qfq.insert(len(df_qfq.columns), df.columns[-1], df[df.columns[-1]])  # 将不复权的成交量添加到前复权的数据列中
+    return df_qfq
+
+
 # =============== 个股K线展示 ===============
 def k_line_display(stock_name):
     """
@@ -134,8 +168,9 @@ def k_line_display(stock_name):
     """
     # data = pd.read_csv(stock_name + '.csv')  # 传入数据
     # sn = stock_name.split('.')
-    data = DB.read_data(tscode_to_tbname(ts_code=stock_name))
-    stock_chinese_name = DB.read_tscode_name(stock_table_name, stock_name)
+    data = DB.read_data(tscode_to_tbname(ts_code=stock_name))  # 未复权的数据
+
+    stock_chinese_name = DB.read_tscode_name(STOCK_BASIC_NAME, stock_name)  # 根据股票的代码获取股票的中文名称
     # bak_basic_data = DB.read_bak_basic_data(tb_name='all_bak_basic_20230318', ts_code=stock_name)
 
     # 构建所需绘制图片的数据集
@@ -450,15 +485,17 @@ def main_stock_fluctuation_statistics(ts_code=''):
 
 
 if __name__ == '__main__':
-    # func_num = args.function
+    # FUNC_NAME = args.function
     # ts_code = args.stock_code
-    func_num = 1
-    tscode = '000001.SZ'
+    FUNC_NAME = 3
+    TSCODE = '000001.SZ'
 
-    if func_num == 0:
+    if FUNC_NAME == 0:
         main()
-    elif func_num == 1:
-        print('Stock Code: ', tscode)
-        k_line_display(tscode)  # 开放ts_code
-    elif func_num == 2:
+    elif FUNC_NAME == 1:
+        print('Stock Code: ', TSCODE)
+        k_line_display(TSCODE)  # 开放ts_code
+    elif FUNC_NAME == 2:
         main_stock_fluctuation_statistics()
+    elif FUNC_NAME == 3:
+        adj_data_processing(TSCODE)

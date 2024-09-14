@@ -1,3 +1,9 @@
+"""
+Created on 2024年09月02日
+
+@author: Aiden_yang
+@website：https://gitee.com/aiden_yang/Stocks
+"""
 import os
 from datetime import datetime
 
@@ -102,8 +108,8 @@ if __name__ == '__main__':
 
     # 获取数据库中的个股数据
     filepath = os.path.abspath(os.path.dirname(__file__))
-    filename = 'sz000001.csv'
-    csvpath = filepath + '/' + filename
+    FILENAME = 'sz000001.csv'
+    csvpath = filepath + '/' + FILENAME
 
     # 将数据适配到bt框架的数据类型
     start_date = datetime(2024, 1, 1)  # 回测开始时间
@@ -115,8 +121,8 @@ if __name__ == '__main__':
     cerebro.adddata(data)
 
     # 设定初始金额
-    cash = 100000.0
-    cerebro.broker.setcash(cash=cash)
+    CASH = 100000.0
+    cerebro.broker.setcash(cash=CASH)
 
     # 设置佣金：千分之一
     cerebro.broker.setcommission(commission=0.001)

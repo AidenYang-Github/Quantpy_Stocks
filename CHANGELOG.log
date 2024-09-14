@@ -1,3 +1,27 @@
+20240914——按照PEP8规范化代码&回测自写简单量化策略
+【经过PEP8规范化的文件后面标注`PEP8`】
+|-[config]
+|   |-__init__.py   # 新增复权因子和量化因子名称及前复权开关（PEP8）
+|-[Module]
+|   |-mysql_data_processing.py  # 新增通过不复权数据计算前复权数据函数`adj_data_processing()`（PEP8）
+|   |-mysql_data_storage.py # 新增数据存储模块，并将所有向数据库存储的函数（get_daily_stocks()）整理至该模块下，同时新增
+                              获取量化因子函数（get_store_quantizer_data()）和获取复权因子函数（get_store_adjfactor_data()）
+|   |-MySQL_Database.py # 修改`write_data()`函数，使其支持自定义参数（PEP8）
+|   |-tushare_api.py    # 新增`stock_basic()`股票列表/`stk_factor()`量化因子/`adj_factor()`复权因子等三个接口函数
+|-[Strategy]
+|   |-__init__.py   # PEP8
+|   |-demo_strategy_csv.py  # PEP8
+|   |-demo_strategy_db.py   # 将不复权数据替换成前复权数据进行策略回测（PEP8）
+|   |-demo_strategy_db_sma.py   # 简单的均线和趋势能量买卖策略回测
+|-mysql_stock_01.py # 1.修整优化数据库存储函数及ts接口调用函数
+                      2.删除冗余的股票列表存储函数`stock_basic_save_into_db()`
+                      3.将`get_daily_stocks()`股票日线获取及存储函数转移至mysql_data_storage.py文件中
+                      4.优化函数逻辑，稳定运行后将在下个版本删除所有无关注释（PEP8）
+|-rules.py  # PEP8
+|-API.txt   # 更新文件结构及ts接口调用函数
+|-CHANGELOG.log # 修改文件名为“CHANGELOG.log”；更新日志文件
+|-README.md # 更新README.md
+
 20240902——新增量化交易策略回测相关内容
 【新增】
 1.[Strategy]新增文件：

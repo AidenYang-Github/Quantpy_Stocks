@@ -26,6 +26,54 @@ class TuShareAPI:
         pass
 
 
+# 股票列表
+def stock_basic(exchange='', list_status=''):
+    """
+    名称	    类型  必选	描述
+    ts_code	    str	    N	TS股票代码
+    name	    str	    N	名称
+    market	    str	    N	市场类别 （主板/创业板/科创板/CDR/北交所）
+    list_status	str	    N	上市状态 L上市 D退市 P暂停上市，默认是L
+    exchange	str	    N	交易所 SSE上交所 SZSE深交所 BSE北交所
+    is_hs	    str	    N	是否沪深港通标的，N否 H沪股通 S深股通
+    limit：单次返回数据长度
+    offset：请求数据的开始位移量
+
+    :param exchange:交易所 SSE上交所 SZSE深交所 HKEX港交所，例如：'SSE'
+    :param list_status:上市状态 L上市 D退市 P暂停上市，例如：'L'
+    :return:
+    """
+    df = pro.stock_basic(**{
+        "ts_code": "",
+        "name": "",
+        "exchange": exchange,
+        "market": "",
+        "is_hs": "",
+        "list_status": list_status,
+        "limit": "",
+        "offset": ""
+    }, fields=[
+        "ts_code",
+        "symbol",
+        "name",
+        "area",
+        "industry",
+        "cnspell",
+        "market",
+        "list_date",
+        "act_name",
+        "act_ent_type",
+        "fullname",
+        "enname",
+        "exchange",
+        "curr_type",
+        "list_status",
+        "delist_date",
+        "is_hs"
+    ])
+    return df
+
+
 # 交易日历
 def trade_cal(cal_date='', start_date='', end_date='', is_open='', limit='', offset=''):
     df = pro.trade_cal(**{
@@ -235,6 +283,104 @@ def pro_bar(ts_code='', sd='', ed='', asset='E', adj='qfq', freq='D', ma=[5, 10]
                     adj=adj,
                     freq=freq,
                     ma=ma)
+    return df
+
+
+# 股票技术因子（量化因子）
+def stk_factor(ts_code, start_date='', end_date='', trade_date=''):
+    """
+    接口：stk_factor
+    描述：获取股票每日技术面因子（量化因子）数据，用于跟踪股票当前走势情况，数据由Tushare社区自产，覆盖全历史
+    限量：单次最大10000条，可以循环或者分页提取（若积分只有120基础积分的情况下，每分钟只能调用两次，每天最多调用6次）
+    积分：5000积分每分钟可以请求100次，8000积分以上每分钟500次，具体请参阅积分获取办法
+
+    ts_code：股票代码
+    start_date：开始日期
+    end_date：结束日期
+    trade_date：交易日期
+    limit：单次返回数据长度
+    offset：请求数据的开始位移量
+    :return:
+    """
+    df = pro.stk_factor(**{
+        "ts_code": ts_code,
+        "start_date": start_date,
+        "end_date": end_date,
+        "trade_date": trade_date,
+        "limit": "",
+        "offset": ""
+    }, fields=[
+        "ts_code",
+        "trade_date",
+        "close",
+        "open",
+        "high",
+        "low",
+        "pre_close",
+        "change",
+        "pct_change",
+        "vol",
+        "amount",
+        "adj_factor",
+        "open_hfq",
+        "open_qfq",
+        "close_hfq",
+        "close_qfq",
+        "high_hfq",
+        "high_qfq",
+        "low_hfq",
+        "low_qfq",
+        "pre_close_hfq",
+        "pre_close_qfq",
+        "macd_dif",
+        "macd_dea",
+        "macd",
+        "kdj_k",
+        "kdj_d",
+        "kdj_j",
+        "rsi_6",
+        "rsi_12",
+        "rsi_24",
+        "boll_upper",
+        "boll_mid",
+        "boll_lower",
+        "cci"
+    ])
+    return df
+
+
+# 复权因子
+def adj_factor(ts_code, trade_date='', start_date='', end_date=''):
+    """
+    接口：adj_factor，可以通过数据工具调试和查看数据。
+    更新时间：早上9点30分
+    描述：获取股票复权因子，可提取单只股票全部历史复权因子，也可以提取单日全部股票的复权因子。
+    积分要求：2000积分起，5000以上可高频调取（经测试，120基础积分可单次调取6000条数据）
+
+    7、Tushare股票行情的前复权机制是什么？
+    在Tushare数据接口里，不管是旧版的一些接口还是Pro版的行情接口，都是以用户设定的end_date开始往前复权，
+    跟所有行情软件或者财经网站上看到的前复权可能存在差异，因为行情软件都是以最近一个交易日开始往前复权的。
+    比如今天是2018年10月26日，您想查2018年1月5日～2018年9月28日的前复权数据，Tushare是先查找9月28日的复权因子，
+    从28日开始复权，而行情软件是从10月26日这天开始复权的。同时，Tushare的复权采用“分红再投”模式计算。
+
+    :param ts_code:股票代码
+    :param trade_date:交易日期（YYYYMMDD，下同）
+    :param start_date:开始日期
+    :param end_date:结束日期
+    :return:
+    """
+    df = pro.adj_factor(**{
+        "ts_code": ts_code,
+        "trade_date": trade_date,
+        "start_date": start_date,
+        "end_date": end_date,
+        "limit": "",
+        "offset": ""
+    }, fields=[
+        "ts_code",
+        "trade_date",
+        "adj_factor"
+    ])
     return df
 
 
