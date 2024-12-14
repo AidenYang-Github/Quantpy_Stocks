@@ -9,8 +9,8 @@ Created on 2024年09月05日
 import time
 from datetime import datetime
 
-from Module import MySQL_Database, tushare_api, mysql_data_processing as mdp
-from config import QUANTIZER_DATABASE, ADJFACTOR_DATABASE, STOCK_BASIC_NAME
+from Module import MySQL_Database, tushare_api, akshare_api, mysql_data_processing as mdp
+from config import QUANTIZER_DATABASE, ADJFACTOR_DATABASE, STOCK_BASIC_NAME, TRADE_DATE, YJBB, HSJA
 
 # 若程序报错则延时循环执行：sec
 TIME = 5
@@ -91,6 +91,47 @@ def get_daily_stocks(db, ts_code, tables):
     print('It takes {} to get stocks!'.format(et - st))
 
 
+# ====================== 交易日历获取 ======================
+def get_trade_date(db, tables):
+    """
+    获取新浪财经的股票交易日历数据
+    :param db:所要存储进的数据库
+    :param tables:数据库中所有数据表
+    :return:
+    """
+    if TRADE_DATE not in tables:
+        # df = tushare_api.trade_cal()
+        df = akshare_api.tool_trade_date_hist_sina()
+        db.write_data(df, TRADE_DATE)
+    else:
+        last_date = db.read_table_last_date(TRADE_DATE)
+        if datetime.now().date() > last_date:
+            df = akshare_api.tool_trade_date_hist_sina()
+            db.write_data(df, TRADE_DATE, if_exists='replace')
+
+
+# ====================== 业绩报表 ======================
+def get_yjbb_data(db):
+    """
+    获取东方财富的年报季报业绩报表数据并存储进数据库
+    :param db: 所要存储进的数据库
+    :return: 
+    """
+    yjbb_df = akshare_api.stock_yjbb_em()
+    db.write_data(yjbb_df, YJBB, if_exists='replace')
+
+
+def get_hsja_data(db):
+    """
+    获取所有沪深京A股上市公司的实时行情数据
+    :param db: 所要存储进的数据库
+    :return:
+    """
+    hsja_df = akshare_api.stock_zh_a_spot_em()
+    db.write_data(hsja_df, HSJA, if_exists='replace')
+
+
+# ====================== 因子获取 ======================
 def get_store_quantizer_data(db, table_df, table_lists):
     """
     获取股票每日技术面因子（量化因子）相关数据并存储进量化因子数据库中
@@ -100,6 +141,7 @@ def get_store_quantizer_data(db, table_df, table_lists):
     :return:
     """
     count = 0
+    st = datetime.now()
     for stock_code in table_df.ts_code:
         try:
             table_name = mdp.tscode_to_tbname(stock_code)
@@ -123,7 +165,7 @@ def get_store_quantizer_data(db, table_df, table_lists):
             print(f'{e}\n延迟{TIME}s')
             time.sleep(TIME)
             continue
-    print(f'共存储{count}次')
+    print(f'\n共存储{count}次，耗时：{datetime.now() - st}')
 
 
 def get_store_adjfactor_data(db, table_df, table_lists):
@@ -135,6 +177,7 @@ def get_store_adjfactor_data(db, table_df, table_lists):
     :return:
     """
     count = 0
+    st = datetime.now()
     for stock_code in table_df.ts_code:
         try:
             table_name = mdp.tscode_to_tbname(stock_code)
@@ -158,10 +201,11 @@ def get_store_adjfactor_data(db, table_df, table_lists):
             print(f'{e}\n延迟{TIME}s')
             time.sleep(TIME)
             continue
-    print(f'共存储{count}次')
+    print(f'\n共存储{count}次，耗时：{datetime.now() - st}')
 
 
-def main_get_store_data():
+# ====================== main ======================
+def main_get_store_factor_data():
     # 0.选择需要操作的数据库名称
     database_name = ADJFACTOR_DATABASE
 
@@ -181,8 +225,34 @@ def main_get_store_data():
         get_store_adjfactor_data(db_, table_df, table_lists)
 
 
+def main_get_store_trade_date_data():
+    # 1.先从存储日线行情的数据库中获取所有股票列表
+    db = MySQL_Database.MySQLDatabaseOperations()
+    # 2.获取该数据库中所有的列表
+    tables = db.show_tables()
+    # 3.获取交易日历并存储进数据库
+    get_trade_date(db, tables=tables)
+
+
+def main_get_store_yjbb_data():
+    # 1.先从存储日线行情的数据库中获取所有股票列表
+    db = MySQL_Database.MySQLDatabaseOperations()
+    # 2.读取数据并存储进数据库
+    get_yjbb_data(db)
+
+
+def main_get_store_hsja_data():
+    # 1.先从存储日线行情的数据库中获取所有股票列表
+    db = MySQL_Database.MySQLDatabaseOperations()
+    # 2.读取数据并存储进数据库
+    get_hsja_data(db)
+
+
 if __name__ == '__main__':
     print('==========%s==========' % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-    main_get_store_data()
+    # main_get_store_factor_data()
+    # main_get_store_trade_date_data()
+    # main_get_store_yjbb_data()
+    main_get_store_hsja_data()
     print('==========%s==========' % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     print('Done!!!')

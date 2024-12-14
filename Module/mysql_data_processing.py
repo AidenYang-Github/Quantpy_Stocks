@@ -33,7 +33,7 @@ import mplfinance as mpf
 import pandas as pd
 
 from Module import MySQL_Database
-from config import STOCK_BASIC_NAME, ADJFACTOR_DATABASE
+from config import STOCK_BASIC_NAME, ADJFACTOR_DATABASE, YJBB
 
 # import matplotlib.pyplot as plt
 
@@ -44,9 +44,6 @@ DB = MySQL_Database.MySQLDatabaseOperations()  # 初始化数据库
 DB_ADJ = MySQL_Database.MySQLDatabaseOperations(ADJFACTOR_DATABASE)  # 初始化数据库
 
 
-# DB.create_mysql_database()   # 新建数据库
-
-
 class MySQLDataProcessing:
     """
     从数据表中获取数据，并绘图以及分析
@@ -54,6 +51,14 @@ class MySQLDataProcessing:
 
     def __init__(self):
         pass
+
+
+# =============== 使用SQL进行简单的查询 ===============
+def sql_data_processing(db, param0, param1, tb_name, column0):
+    # 从`tb_name`数据表中查询column0栏中包含param1的字段
+    sql = "SELECT {0} FROM {1} WHERE {2} LIKE '{3}'".format(param0, tb_name, column0, param1)
+    df = pd.read_sql_query(sql, db.engine_ts)
+    return df
 
 
 # =============== 外部传参 ===============
@@ -127,7 +132,11 @@ def fluctuation_statistics(ts_code=''):
 
 
 def adj_data_processing(stock_name=''):
-    # 通过不复权的数据计算前复权数据
+    """
+    通过不复权的数据计算前复权数据
+    :param stock_name: stock tscode，例如：'000001.SZ'
+    :return:
+    """
     table_name = tscode_to_tbname(stock_name)
     df = DB.read_data(table_name)
     df_adj = DB_ADJ.read_data(table_name)
@@ -157,6 +166,26 @@ def adj_data_processing(stock_name=''):
 
     df_qfq.insert(len(df_qfq.columns), df.columns[-1], df[df.columns[-1]])  # 将不复权的成交量添加到前复权的数据列中
     return df_qfq
+
+
+# 股票筛选
+def stock_filter():
+    # tables = DB.show_tables()
+    # if YJBB in tables:
+    #     yjbb = DB.read_data(YJBB)
+
+    # 通过SQL代码筛选
+    df = pd.DataFrame()
+    pa0 = '*'
+    param = ['00%', '60%']
+    tbname = YJBB
+    col0 = '股票代码'
+    for pa in param:
+        df_ = sql_data_processing(DB, param0=pa0, param1=pa, tb_name=tbname, column0=col0)
+        df = pd.concat([df, df_])
+
+
+    pass
 
 
 # =============== 个股K线展示 ===============
@@ -487,7 +516,7 @@ def main_stock_fluctuation_statistics(ts_code=''):
 if __name__ == '__main__':
     # FUNC_NAME = args.function
     # ts_code = args.stock_code
-    FUNC_NAME = 3
+    FUNC_NAME = 4
     TSCODE = '000001.SZ'
 
     if FUNC_NAME == 0:
@@ -499,3 +528,5 @@ if __name__ == '__main__':
         main_stock_fluctuation_statistics()
     elif FUNC_NAME == 3:
         adj_data_processing(TSCODE)
+    elif FUNC_NAME == 4:
+        stock_filter()

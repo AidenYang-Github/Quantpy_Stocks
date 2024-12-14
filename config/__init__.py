@@ -21,6 +21,9 @@ ADJFACTOR_DATABASE = 'adjfactor_db'
 STOCK_TSCODE = '000001.SZ'
 STOCK_BASIC_NAME = 'all_stock_basic'
 DELISTED_STOCK_TBNAME = 'all_delisted_stock'
+TRADE_DATE = 'all_trade_date'
+YJBB = 'all_yjbb'
+HSJA = 'all_hsja'
 
 # Tushare接口状态说明（具体查看../Module/tushare_api.py文件）
 # <stock_basic_>建议每天第一次参数设置为'L'，成功将数据存储到本地后，当天如需多次运行程序建议后续将参数设置为None

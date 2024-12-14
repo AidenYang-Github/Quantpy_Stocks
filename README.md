@@ -42,7 +42,7 @@
     * \__init\__.py # 量化交易策略参数配置
     * demo_strategy_csv.py  # 从csv文件获取数据的简单回测策略文件
     * demo_strategy_db.py  # 从数据库获取数据的简单回测策略文件
-    * demo_strategy_db_sma.py  # 基于sma策略的简单回测策略文件（从数据库获取数据）
+    * demo_strategy_db_sma.py  # 基于sma策略的简单回测策略文件
     * sz000001.csv  # 个股数据csv文件（和`demo_strategy_csv.py`文件配合使用）
 * [web/img] # README.md所需图片
 * main.py # 主程序
@@ -74,8 +74,8 @@ STOCK_BASIC_ = 'L'
 3.当数据全部存储到本地后，可以直接运行*mysql_data_processing.py*文件，来查看个股的K线图，如图展示“000001.SZ平安银行”的K线、MA及成交量
 ![个股股价成交量K线图](./web/img/个股股价成交量K线图.jpg)
 
-4.量化交易策略回测简单尝试（数据未复权）：[基于Python的量化交易回测框架Backtrader初识记录（一）](https://blog.csdn.net/u011628215/article/details/141750404)
-![不复权的个股数据进行量化策略回测](./web/img/db_kline.png)
+4.量化交易策略回测简单尝试（数据未复权）：[基于Python的量化交易回测框架Backtrader初识记录（一）](https://blog.csdn.net/u011628215/article/details/141750404)  
+![不复权的个股数据进行量化策略回测](./web/img/db_kline.bmp)
 
 ## Issues
 1.如果运行中遇到连接超时（如图1），请重新再运行一次程序，原因是接口连接不稳定；通常第一次运行程序会出现，因为第一次耗时较长（一般1.5h~2.5h），后续运行一般在半小时以内
