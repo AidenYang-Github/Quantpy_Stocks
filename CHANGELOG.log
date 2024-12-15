@@ -1,3 +1,8 @@
+20241215
+|-[Strategy]
+|   |-[Train]
+        |-demo_LSTM_20241214.py # 修改“demo_LSTM_20241214.py”为“demo_lstm_model.py”
+
 20241214
 |-[config]
 |   |-__init__.py   # 在数据库“stock_databases_02”新增数据表'all_trade_date'、'all_yjbb'、'all_hsja'参数
