@@ -3,7 +3,7 @@
 
 e.g. feat:添加xxx模块
 
-类型参考：[Change Type (select all)](https://github.com/AidenYang-Github/Quantpy_Stocks/new/dev#change-type-select-all)
+类型参考以下：**Change Type (select all)**
 
 
 
