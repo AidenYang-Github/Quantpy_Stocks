@@ -23,21 +23,25 @@ change = close - pre_close
 pct_chg = change/pre_close
 
 """
+import argparse
+# -*- coding: UTF-8 -*-
 import sys
 import time
 from datetime import datetime
-import argparse
 
-import pandas as pd
 import mplfinance as mpf
+import pandas as pd
 
 from Module import MySQL_Database
+from config import STOCK_BASIC_NAME, ADJFACTOR_DATABASE, YJBB
+
+# import matplotlib.pyplot as plt
 
 local_datetime = time.strftime('%Y%m%d')
 
 # 数据库初始化设置
 DB = MySQL_Database.MySQLDatabaseOperations()  # 初始化数据库
-# DB.create_mysql_database()   # 新建数据库
+DB_ADJ = MySQL_Database.MySQLDatabaseOperations(ADJFACTOR_DATABASE)  # 初始化数据库
 
 
 class MySQLDataProcessing:
@@ -47,6 +51,14 @@ class MySQLDataProcessing:
 
     def __init__(self):
         pass
+
+
+# =============== 使用SQL进行简单的查询 ===============
+def sql_data_processing(db, param0, param1, tb_name, column0):
+    # 从`tb_name`数据表中查询column0栏中包含param1的字段
+    sql = "SELECT {0} FROM {1} WHERE {2} LIKE '{3}'".format(param0, tb_name, column0, param1)
+    df = pd.read_sql_query(sql, db.engine_ts)
+    return df
 
 
 # =============== 外部传参 ===============
@@ -119,6 +131,63 @@ def fluctuation_statistics(ts_code=''):
     return [f1, f2, f3, f4, f5, f6, f7, f8, f9, f10]
 
 
+def adj_data_processing(stock_name=''):
+    """
+    通过不复权的数据计算前复权数据
+    :param stock_name: stock tscode，例如：'000001.SZ'
+    :return:
+    """
+    table_name = tscode_to_tbname(stock_name)
+    df = DB.read_data(table_name)
+    df_adj = DB_ADJ.read_data(table_name)
+
+    df.index = pd.to_datetime(df['trade_date'])
+    df_adj.index = pd.to_datetime(df_adj['trade_date'])
+
+    df.drop(['ts_code', 'trade_date', 'pre_close', 'change', 'pct_chg', 'amount'], axis=1, inplace=True)
+    df_adj.drop(['ts_code', 'trade_date'], axis=1, inplace=True)
+
+    df.rename(columns={'vol': 'volume'}, inplace=True)
+
+    start_date = max(df.index[0], df_adj.index[0])
+    end_date = min(df.index[-1], df_adj.index[-1])
+
+    latest_adj_factor = df_adj.adj_factor.array[-1]  # 获取最后（最新）一天的复权因子
+
+    df = df[start_date:end_date]
+    df_adj = df_adj[start_date:end_date]
+
+    merge_df = pd.merge(df, df_adj, left_index=True, right_index=True)
+
+    df_qfq = pd.DataFrame()
+    for i in range(len(merge_df.columns) - 2):
+        data_qfq = merge_df[merge_df.columns[i]] * merge_df[merge_df.columns[-1]] / latest_adj_factor
+        df_qfq.insert(i, merge_df.columns[i], data_qfq)
+
+    df_qfq.insert(len(df_qfq.columns), df.columns[-1], df[df.columns[-1]])  # 将不复权的成交量添加到前复权的数据列中
+    return df_qfq
+
+
+# 股票筛选
+def stock_filter():
+    # tables = DB.show_tables()
+    # if YJBB in tables:
+    #     yjbb = DB.read_data(YJBB)
+
+    # 通过SQL代码筛选
+    df = pd.DataFrame()
+    pa0 = '*'
+    param = ['00%', '60%']
+    tbname = YJBB
+    col0 = '股票代码'
+    for pa in param:
+        df_ = sql_data_processing(DB, param0=pa0, param1=pa, tb_name=tbname, column0=col0)
+        df = pd.concat([df, df_])
+
+
+    pass
+
+
 # =============== 个股K线展示 ===============
 def k_line_display(stock_name):
     """
@@ -128,7 +197,9 @@ def k_line_display(stock_name):
     """
     # data = pd.read_csv(stock_name + '.csv')  # 传入数据
     # sn = stock_name.split('.')
-    data = DB.read_data(tscode_to_tbname(ts_code=stock_name))
+    data = DB.read_data(tscode_to_tbname(ts_code=stock_name))  # 未复权的数据
+
+    stock_chinese_name = DB.read_tscode_name(STOCK_BASIC_NAME, stock_name)  # 根据股票的代码获取股票的中文名称
     # bak_basic_data = DB.read_bak_basic_data(tb_name='all_bak_basic_20230318', ts_code=stock_name)
 
     # 构建所需绘制图片的数据集
@@ -140,7 +211,11 @@ def k_line_display(stock_name):
             'High': data['high'],
             'Low': data['low'],
             'Close': data['close'],
-            'Volume': data['vol']
+            'Pclose': data['pre_close'],
+            'Change': data['change'],
+            'Pchange': data['pct_chg'],
+            'Volume': data['vol'],
+            'Amount': data['amount']
         }
     )
 
@@ -173,14 +248,34 @@ def k_line_display(stock_name):
     )
 
     # 设置k线样式
+    """mpf.available_styles()
+    具体见：https://github.com/matplotlib/mplfinance/wiki/Mplfinance-Style-Sheets-Reference
+    'binance'：甘露寺蜜璃色
+    'binancedark'：报错
+    'blueskies'：天蓝色系
+    'brasil'：绿色背景黄藏蓝色柱
+    'charles'：深绿红色柱
+    'checkers'：红黑色柱
+    'classic'：全黑色柱
+    'default'：黑白色柱
+    'ibd'：粉红蓝色柱
+    'kenan'：红黑色柱
+    'mike'：全黑背景蓝黑色柱
+    'nightclouds'：全黑背景蓝白色柱
+    'sas'：深红深蓝色柱
+    'starsandstripes'：深红深蓝色柱
+    'tradingview'：报错
+    'yahoo'：亮红亮绿色柱
+    """
     my_style = mpf.make_mpf_style(
         marketcolors=my_color,  # 设置图标显示配色 mpf.available_styles() 可以查看所有样式
         gridaxis='both',  # 设置网格位置
         gridstyle='-.',  # 设置网格线线型
-        # rc={'font.family': 'STSong'}  # 设置中文兼容
+        rc={'font.family': 'SimHei'}  # 设置中文兼容（如果STSong无效的话改成SimHei）
     )
 
     # 获取指定数量的k线数据，开放参数手动调节
+    # args.num = 100
     data_k_line_index = data_k_line.index[-1 * args.num:]  # 取索引中最后args.num个数据
     part_of_data_k_line = data_k_line.loc[data_k_line_index, :]
 
@@ -189,24 +284,120 @@ def k_line_display(stock_name):
     # add_plot = [mpf.make_addplot(part_of_data_k_line[['Pe']]),
     #             mpf.make_addplot(part_of_data_k_line[['Pb']])]
 
+    # 读取显示区间的最后一个交易日的数据
+    last_k_line_data = part_of_data_k_line.iloc[-1]
+    # 使用mpf.figure()函数可以返回一个figure对象，从而进入External Axes Mode，从而实现对Axes对象和figure对象的自由控制
+    fig = mpf.figure(style=my_style, figsize=(12, 8), facecolor=(0.82, 0.83, 0.85))
+
+    # 添加三个图表，四个数字分别代表图表左下角在figure中的坐标，以及图表的宽（0.88）、高（0.60）
+    # 添加第二、三张图表时，使用sharex关键字指明与ax1在x轴上对齐，且共用x轴
+    ax1 = fig.add_axes([0.06, 0.25, 0.88, 0.60])
+    ax2 = fig.add_axes([0.06, 0.15, 0.88, 0.10], sharex=ax1)
+    ax3 = fig.add_axes([0.06, 0.05, 0.88, 0.10], sharex=ax1)
+
+    # 设置三张图表的Y轴坐标
+    ax1.set_ylabel('price of stock (yuan)')
+    ax2.set_ylabel('Trading volume (shares)')
+    ax3.set_ylabel('MACD')
+
+    # 标题格式，字体为中文字体，颜色为黑色，粗体，水平中心对齐（pingfang HK）
+    title_font = {'fontname': 'SimHei',
+                  'size': '16',
+                  'color': 'black',
+                  'weight': 'bold',
+                  'va': 'bottom',
+                  'ha': 'center'}
+    # 红色数字格式（显示开盘收盘价）粗体红色24号字
+    large_red_font = {'fontname': 'Arial',
+                      'size': '24',
+                      'color': 'red',
+                      'weight': 'bold',
+                      'va': 'bottom'}
+    # 绿色数字格式（显示开盘收盘价）粗体绿色24号字
+    large_green_font = {'fontname': 'Arial',
+                        'size': '24',
+                        'color': 'green',
+                        'weight': 'bold',
+                        'va': 'bottom'}
+    # 小数字格式（显示其他价格信息）粗体红色12号字
+    small_red_font = {'fontname': 'Arial',
+                      'size': '12',
+                      'color': 'red',
+                      'weight': 'bold',
+                      'va': 'bottom'}
+    # 小数字格式（显示其他价格信息）粗体绿色12号字
+    small_green_font = {'fontname': 'Arial',
+                        'size': '12',
+                        'color': 'green',
+                        'weight': 'bold',
+                        'va': 'bottom'}
+    # 标签格式，可以显示中文，普通黑色12号字
+    normal_label_font = {'fontname': 'SimHei',
+                         'size': '12',
+                         'color': 'black',
+                         'va': 'bottom',
+                         'ha': 'right'}
+    # 普通文本格式，普通黑色12号字
+    normal_font = {'fontname': 'Arial',
+                   'size': '12',
+                   'color': 'black',
+                   'va': 'bottom',
+                   'ha': 'left'}
+
+    # 在figure对象上添加文本对象，用于显示各种价格和标题
+    fig.text(0.50, 0.94, f'{stock_name}-{stock_chinese_name}', **title_font)
+    fig.text(0.12, 0.90, '开/收: ', **normal_label_font)
+    fig.text(0.14, 0.89, f'{last_k_line_data["Open"]} / {last_k_line_data["Close"]}', **large_red_font)
+    fig.text(0.14, 0.86, f'{last_k_line_data["Change"]}', **small_red_font)
+    fig.text(0.22, 0.86, f'[{last_k_line_data["Pchange"]}%]', **small_red_font)
+    fig.text(0.12, 0.86, f'{last_k_line_data.name.date()}', **normal_label_font)
+    fig.text(0.40, 0.90, '最高: ', **normal_label_font)
+    fig.text(0.40, 0.90, f'{last_k_line_data["High"]}', **small_red_font)
+    fig.text(0.40, 0.86, '最低: ', **normal_label_font)
+    fig.text(0.40, 0.86, f'{last_k_line_data["Low"]}', **small_green_font)
+    fig.text(0.55, 0.90, '成交量(万手): ', **normal_label_font)
+    fig.text(0.55, 0.90, f'{round(last_k_line_data["Volume"] / 10000, 3)}', **normal_font)
+    fig.text(0.55, 0.86, '成交额(亿元): ', **normal_label_font)
+    fig.text(0.55, 0.86, f'{round(last_k_line_data["Amount"] / 100000, 3)}', **normal_font)
+    # fig.text(0.70, 0.90, '涨停: ')
+    # fig.text(0.70, 0.90, f'{last_k_line_data["upper_lim"]}')
+    # fig.text(0.70, 0.86, '跌停: ')
+    # fig.text(0.70, 0.86, f'{last_k_line_data["lower_lim"]}')
+    # fig.text(0.85, 0.90, '均价: ')
+    # fig.text(0.85, 0.90, f'{last_k_line_data["average"]}')
+    fig.text(0.85, 0.86, '昨收: ', **normal_label_font)
+    fig.text(0.85, 0.86, f'{last_k_line_data["Pclose"]}', **normal_font)
+
     # 显示K线
-    mpf.plot(
-        part_of_data_k_line,
-        type='candle',  # 设置显示样式，选项['ohlc','candle','line','renko','pnf']
-        title='%s K-line chart of stock price trend' % stock_name,  # 设置图标题
-        ylabel='price of stock (yuan)',  # 设置y轴标题
-        style=my_style,  # 应用上面命令设置的样式
-        show_nontrading=False,  # 是否显示非交易日，默认为False：显示
-        volume=True,  # 下方是否显示成交量，默认为False
-        ylabel_lower='Trading volume (shares)',  # 成交量图的y轴标题
-        datetime_format='%Y-%m-%d',  # x轴的时间显示格式
-        xrotation=45,  # x轴的时间坐标旋转角度
-        linecolor='#00ff00',  # 若type='line'设置线条的颜色
-        tight_layout=False,  # 是否紧密显示
-        mav=(5, 10, 30),  # Moving Average
-        # addplot=add_plot,
-        warn_too_much_data=7000  # 最大报警数值，默认599，超过599条数据后会显示警告
-    )
+    # mpf.plot(
+    #     part_of_data_k_line,
+    #     type='candle',  # 设置显示样式，选项['ohlc','candle','line','renko','pnf']
+    #     title='%s K-line chart of stock price trend' % stock_name,  # 设置图标题
+    #     ylabel='price of stock (yuan)',  # 设置y轴标题
+    #     style=my_style,  # 应用上面命令设置的样式
+    #     # style='default',  # 应用上面命令设置的样式
+    #     show_nontrading=False,  # 是否显示非交易日，默认为False：显示
+    #     volume=True,  # 下方是否显示成交量，默认为False
+    #     ylabel_lower='Trading volume (shares)',  # 成交量图的y轴标题
+    #     datetime_format='%Y-%m-%d',  # x轴的时间显示格式
+    #     xrotation=45,  # x轴的时间坐标旋转角度
+    #     linecolor='#00ff00',  # 若type='line'设置线条的颜色
+    #     tight_layout=False,  # 是否紧密显示
+    #     mav=(5, 10, 30),  # Moving Average
+    #     # addplot=add_plot,
+    #     warn_too_much_data=7000  # 最大报警数值，默认599，超过599条数据后会显示警告
+    # )
+
+    # plt.rcParams['font.sans-serif'] = ['SimHei']
+    mpf.plot(part_of_data_k_line,
+             ax=ax1,
+             volume=ax2,
+             type='candle',
+             style=my_style,
+             mav=(5, 10, 30),  # Moving Average
+             warn_too_much_data=7000  # 最大报警数值，默认599，超过599条数据后会显示警告
+             )
+    fig.show()
     pass
 
 
@@ -323,15 +514,19 @@ def main_stock_fluctuation_statistics(ts_code=''):
 
 
 if __name__ == '__main__':
-    # func_num = args.function
+    # FUNC_NAME = args.function
     # ts_code = args.stock_code
-    func_num = 1
-    tscode = '000001.SZ'
+    FUNC_NAME = 4
+    TSCODE = '000001.SZ'
 
-    if func_num == 0:
+    if FUNC_NAME == 0:
         main()
-    elif func_num == 1:
-        print('Stock Code: ', tscode)
-        k_line_display(tscode)  # 开放ts_code
-    elif func_num == 2:
+    elif FUNC_NAME == 1:
+        print('Stock Code: ', TSCODE)
+        k_line_display(TSCODE)  # 开放ts_code
+    elif FUNC_NAME == 2:
         main_stock_fluctuation_statistics()
+    elif FUNC_NAME == 3:
+        adj_data_processing(TSCODE)
+    elif FUNC_NAME == 4:
+        stock_filter()

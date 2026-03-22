@@ -1,0 +1,105 @@
+20241215
+|-[Strategy]
+|   |-[Train]
+        |-demo_LSTM_20241214.py # 修改“demo_LSTM_20241214.py”为“demo_lstm_model.py”
+
+20241214
+|-[config]
+|   |-__init__.py   # 在数据库“stock_databases_02”新增数据表'all_trade_date'、'all_yjbb'、'all_hsja'参数
+|-[Module]
+|   |-mysql_data_processing.py  # 新增SQL查询函数`sql_data_processing()`、股票筛选函数`stock_filter()`
+|   |-mysql_data_storage.py # 新增交易日历获取函数`get_trade_date()`、东财年报季报业绩报表函数`get_yjbb_data()`和
+                            A股上市公司实时行情数据函数`get_hsja_data()`以及存储上述数据到数据库的函数
+                            `main_get_store_trade_date_data()`、`main_get_store_yjbb_data()`、`main_get_store_hsja_data()`
+|-[Strategy]
+|   |-[Train]
+        |-[data]    # 新增通过“demo_LSTM_20241214.py”所训练出的*.pth模型（共24个）
+        |-[lstm(input, (h_0, c_0))] # 新增通过“demo_LSTM_20241214.py”所训练出的回归曲线图片（ADAM/SGD两个文件夹共24张图片）
+        |-demo_LSTM_20241214.py # 新增lstm神经网络训练文件
+        |-执行超参组合训练日志.txt    # 新增“demo_LSTM_20241214.py”文件执行的训练日志
+|-CHANGELOG.log # 更新日志文件
+|-requirements.txt  # 依赖包文件中新增依赖：akshare==1.10.42、torch==1.13.1、numpy==1.21.6、matplotlib==3.5.3
+
+20240919
+1.新增使用AKshare接口的数据
+
+20240914——按照PEP8规范化代码&回测自写简单量化策略
+【经过PEP8规范化的文件后面标注`PEP8`】
+|-[config]
+|   |-__init__.py   # 新增复权因子和量化因子名称及前复权开关（PEP8）
+|-[Module]
+|   |-mysql_data_processing.py  # 新增通过不复权数据计算前复权数据函数`adj_data_processing()`（PEP8）
+|   |-mysql_data_storage.py # 新增数据存储模块，并将所有向数据库存储的函数（get_daily_stocks()）整理至该模块下，同时新增
+                              获取量化因子函数（get_store_quantizer_data()）和获取复权因子函数（get_store_adjfactor_data()）
+|   |-MySQL_Database.py # 修改`write_data()`函数，使其支持自定义参数（PEP8）
+|   |-tushare_api.py    # 新增`stock_basic()`股票列表/`stk_factor()`量化因子/`adj_factor()`复权因子等三个接口函数
+|-[Strategy]
+|   |-__init__.py   # PEP8
+|   |-demo_strategy_csv.py  # PEP8
+|   |-demo_strategy_db.py   # 将不复权数据替换成前复权数据进行策略回测（PEP8）
+|   |-demo_strategy_db_sma.py   # 简单的均线和趋势能量买卖策略回测
+|-mysql_stock_01.py # 1.修整优化数据库存储函数及ts接口调用函数
+                      2.删除冗余的股票列表存储函数`stock_basic_save_into_db()`
+                      3.将`get_daily_stocks()`股票日线获取及存储函数转移至mysql_data_storage.py文件中
+                      4.优化函数逻辑，稳定运行后将在下个版本删除所有无关注释（PEP8）
+|-rules.py  # PEP8
+|-API.txt   # 更新文件结构及ts接口调用函数
+|-CHANGELOG.log # 修改文件名为“CHANGELOG.log”；更新日志文件
+|-README.md # 更新README.md
+
+20240902——新增量化交易策略回测相关内容
+【新增】
+1.[Strategy]新增文件：
+    |- __init__.py 量化交易策略参数配置文件
+    |- demo_strategy_csv.py 从csv文件获取数据的简单回测策略文件
+    |- demo_strategy_db.py 从数据库获取数据的简单回测策略文件
+    |- sz000001.csv 个股数据csv文件
+【修改】
+2.[Module]修改文件：
+    |- mysql_data_processing.py 调整了部分K线展示的参数以及字体大小（还没有调整完，待TODO）
+    |- MySQL_Database.py    新增read_tscode_name()函数，用于读取股票代码所对应的股票中文简称
+3.LOG.log   更新日志文件
+4.requirements.txt  依赖包文件中新增依赖：backtrader
+【待更新】
+1.本次更新主要适配CSDN文章(https://blog.csdn.net/u011628215/article/details/141750404)中的内容，README.md文件后续再更新
+
+20240807
+【将各个文件系统归纳，并新增完善文件】
+1.[config]完善config初始化配置文件
+2.[Module]数据库操作模块转移到Module文件夹下
+3.[Module]将tushare的接口统一归纳到tushare_api.py文件下
+4.[output]新增《train_2024-08-06_20-28-00.log》作为参考
+5.整理接口调用说明文件API.txt
+6.新增更新日志LOG.log
+7.删除mysql_stock_01.py中冗余代码并将调用代码进行模块分类
+8.更新README.md
+9.新增requirements.txt依赖包文件
+
+20240804
+update project framework
+1.文件按照模块分类存放（Module文件夹）；
+2.初始化配置单独存放（config文件夹）；
+3.删除冗余代码；
+4.实行主干、分支单独运作；
+
+20240729
+update README.md
+1.更新README.md
+
+20240720
+update README.md
+1.更新README.md
+
+20240719
+add README.md & main.py
+1.修改.gitignore文件
+2.新增README.md和main.py程序运行文件
+3.忽略并修改部分文件
+
+20240718
+file delete&change
+1.删除项目无关文件
+2.新增.gitignore文件
+
+20240716
+Initial commit

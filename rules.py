@@ -23,12 +23,12 @@ def rules():
 # 交易股票的整个过程费用记录
 
 # === COST ===
-Mini_Commission = 5.0  # 最低佣金
+MINI_COMMISSION = 5.0  # 最低佣金
 
 # === RATE ===
-Commission_Rate = 0.00025  # 佣金率（旧：0.00087339999）
-Stamp_Duty_Rate = 0.5 / 1000  # 印花税率SSD
-Transfer_Rate = 0.01 / 1000  # 过户费率
+COMMISSION_RATE = 0.00025  # 佣金率（旧：0.00087339999）
+STAMP_DUTY_RATE = 0.5 / 1000  # 印花税率SSD
+TRANSFER_RATE = 0.01 / 1000  # 过户费率
 
 
 class TradeCalculate:
@@ -38,10 +38,10 @@ class TradeCalculate:
         tcat_of_stocks:total_cost_after_tax_of_stocks: 目前已经购入股票的税后总金额
         taf:total_account_funds: 账户总资金
         """
-        self.mc = Mini_Commission
-        self.cr = Commission_Rate
-        self.sdr = Stamp_Duty_Rate
-        self.tr = Transfer_Rate
+        self.mc = MINI_COMMISSION
+        self.cr = COMMISSION_RATE
+        self.sdr = STAMP_DUTY_RATE
+        self.tr = TRANSFER_RATE
 
         self.num_of_stocks = 0.0  # 目前已经购入的股票总数
         self.tp_of_stocks = 0.0  # total_prices_of_stocks: 目前已经购入股票的总金额
@@ -122,7 +122,7 @@ class TradeCalculate:
 
             return rtpat, self.num_of_stocks
         else:
-            print(f'卖出股数超过所拥有总股数！')
+            print('卖出股数超过所拥有总股数！')
 
     def break_even_price_guidance(self):
         """保本价格指导

@@ -3,29 +3,51 @@
 ================ 文件结构 ================================
 [Stocks]
     |-[config]
-    |   |- __init__.py
+    |   |-__init__.py
     |-[Module]
     |   |-__init__.py
     |   |-mysql_data_processing.py
-    |   |- MySQL_Database.py
+    |   |-mysql_data_storage.py
+    |   |-MySQL_Database.py
     |   |-tushare_api.py
+    |-[output]
+    |   |-train_2024-08-06_20-28-00.log
+    |-[Strategy]
+    |   |-__init__.py
+    |   |-demo_strategy_csv.py
+    |   |-demo_strategy_db.py
+    |   |-demo_strategy_db_sma.py
+    |   |-sz000001.csv
+    |-[web/img]
     |-main.py
-        |-mysql_stock_01.py(替换mysql_stock.py)
+    |   |-mysql_stock.py(下一个版本删除)
+    |   |-mysql_stock_01.py(替换mysql_stock.py)
+    |-TOKEN_ID.py（需要自行申请TOKEN并新建TOKEN_ID.py文件）
+    |-rules.py
+    |-API.txt
+    |-CHANGELOG.log
+    |-README.md
+    |-requirements.txt
+    |-sz000001.csv
 
 ================ 所有调用tushare接口的函数 ================
 """pro.调用接口{类/函数}"""
 
 mysql_stock_01.py
-    |- pro.stock_basic{TuShareStock}
+    |- pro.stock_basic{TuShareStock}    # 目前已经注释掉，下一版本删除
 
 tushare_api.py
+    |- pro.stock_basic{stock_basic()}
     |- pro.trade_cal{trade_cal()}
     |- pro.daily{get_daily_data()/get_trade_date_data()}
     |- pro.bak_basic{bak_basic()}
     |- pro.bak_daily{bak_daily()}
     |- pro.stock_mx{stock_mx()}
     |- pro.suspend_d{suspend_d()}
+    |- pro.stk_factor{stk_factor()}
+    |- pro.adj_factor{adj_factor()}
 
+P.S. pro.xxx{在xxx()函数中定义}
 =========================================================
 *具体接口使用说明查看Tushare官网：https://tushare.pro/
 *其中有的接口未使用到，因为积分不够
