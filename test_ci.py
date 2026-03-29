@@ -4,4 +4,5 @@ import pandas as pd
 import sklearn
 import torch
 
-print(f'CI test is PASS')
+def test_print():
+    print(f'CI test is PASS')
