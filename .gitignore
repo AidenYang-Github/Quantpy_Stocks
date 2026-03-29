@@ -6,6 +6,7 @@ __pycache__/
 .idea/
 .web/.xmind
 .output/train_2023-*.log
+.vscode/
 
 # .sh/.bat
 *.sh
